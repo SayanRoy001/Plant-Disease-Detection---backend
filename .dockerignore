@@ -10,8 +10,6 @@ __pycache__/
 .env
 .env.*
 *.env
-*.pth
-*.pt
 .build/
 .cache/
 .idea/
