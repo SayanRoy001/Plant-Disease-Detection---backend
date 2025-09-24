@@ -87,6 +87,7 @@ GENAI_API_KEY = os.getenv("GENAI_API_KEY")
 # Allow choosing model via env; default to widely available model
 GENAI_MODEL = os.getenv("GENAI_MODEL", "gemini-1.5-flash")
 genai.configure(api_key=GENAI_API_KEY)
+from functools import lru_cache
 
 def get_disease_details(disease_name):
     """Generates a detailed explanation, symptoms, and treatment for a given disease using Gemini AI."""
@@ -109,6 +110,11 @@ def get_disease_details(disease_name):
     except Exception as e:
         return f"Error: {e}"
 
+@lru_cache(maxsize=256)
+def cached_disease_details(disease_name: str):
+    """Cache wrapper to reduce repeated LLM calls for the same disease."""
+    return get_disease_details(disease_name)
+
 @app.route("/diseaseinfo", methods=["GET"])
 def get_disease_info():
     """API endpoint to fetch disease information."""
@@ -117,7 +123,8 @@ def get_disease_info():
         print("⚠️ No disease_name received in request!")
         
     print(disease_name)
-    disease_info = get_disease_details(disease_name)
+    # Use cached variant to avoid excessive token usage & latency.
+    disease_info = cached_disease_details(disease_name)
     print(disease_info)
     return jsonify({"info":disease_info})
 
@@ -126,6 +133,13 @@ if __name__ == '__main__':
     # Use 8080 as default (common for container platforms like Cloud Run) if PORT not set.
     port = int(os.getenv('PORT', os.getenv('FLASK_RUN_PORT', '8080')))
     debug_flag = os.getenv('FLASK_DEBUG', '').lower() in ('1', 'true', 'yes')
+    # Optional warm model load for platforms where first-request latency matters
+    if os.getenv('WARM_MODEL', '').lower() in ('1', 'true', 'yes'):
+        try:
+            load_model()
+            print('Model preloaded at startup.')
+        except Exception as e:
+            print(f'Warm model load failed: {e}')
     app.run(host='0.0.0.0', port=port, debug=debug_flag)
 
 
