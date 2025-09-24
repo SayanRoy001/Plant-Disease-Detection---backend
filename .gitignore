@@ -1,0 +1,16 @@
+## Backend specific overrides (root .gitignore already covers most) 
+__pycache__/
+venv/
+.env
+.env.*
+*.env
+
+# Keep this reminder about large model files
+# If you choose to track weights, remove patterns from root and use Git LFS.
+*.pth
+*.pt
+
+# Local logs / caches
+*.log
+.cache/
+.pytest_cache/
