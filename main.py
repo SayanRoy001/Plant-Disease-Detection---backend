@@ -15,6 +15,11 @@ MODEL_PATH = "plant_disease_model.pth"
 @app.route("/")
 def home():
    return "server ready!"
+
+@app.route('/health')
+def health():
+    """Lightweight health check (no model load)."""
+    return jsonify(status="ok"), 200
 def load_model():
     """Load model only once (prevents high memory usage)."""
     global model
@@ -117,8 +122,9 @@ def get_disease_info():
     return jsonify({"info":disease_info})
 
 if __name__ == '__main__':
-    # Allow overriding port and debug mode from environment variables
-    port = int(os.getenv('PORT', '5000'))
+    # Allow overriding port and debug mode from environment variables.
+    # Use 8080 as default (common for container platforms like Cloud Run) if PORT not set.
+    port = int(os.getenv('PORT', os.getenv('FLASK_RUN_PORT', '8080')))
     debug_flag = os.getenv('FLASK_DEBUG', '').lower() in ('1', 'true', 'yes')
     app.run(host='0.0.0.0', port=port, debug=debug_flag)
 
